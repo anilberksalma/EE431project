@@ -75,8 +75,16 @@ for s = 1:length(noise_seeds)
         
         % Sonuçları anlık olarak ekrana bas
         fprintf('%-12.3f | %-15.5f | %-15.5f\n', p, hamming_results(s, b), viterbi_results(s, b));
+
+        if p == 0.05 || p == 0.10
+            % Hamming analizi için fonksiyonu besliyoruz
+            analyze_errors(msg_bits, hamming_rx, hamming_decoded, sprintf('Hamming (7,4) [Seed:%d, p:%.2f]', current_seed, p));
+            % Viterbi analizi için fonksiyonu besliyoruz
+            analyze_errors(msg_bits, viterbi_rx, viterbi_decoded, sprintf('Viterbi [Seed:%d, p:%.2f]', current_seed, p));
+        end
     end
 end
+
 
 % ==========================================
 % 3. RAPOR İÇİN ÖZET TABLO

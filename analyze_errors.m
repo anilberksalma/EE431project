@@ -1,26 +1,31 @@
 function analyze_errors(tx_bits, rx_bits, decoded_bits, system_name)
-    % Bu fonksiyon, çözülemeyen hataların karakteristiğini analiz eder.
-    
+    % Çözülemeyen nihai bit hataları (Her iki sistemde de giriş/çıkış 96 bittir)
     total_errors = sum(tx_bits ~= decoded_bits);
-    channel_errors = sum(tx_bits ~= rx_bits);
     
-    fprintf('\n========== DIAGNOSTIC REPORT: %s ==========\n', upper(system_name));
-    fprintf('Total Bits Transmitted: %d\n', length(tx_bits));
-    fprintf('Errors Introduced by BSC Channel: %d\n', channel_errors);
-    fprintf('Residual (Uncorrected) Errors: %d\n', total_errors);
+    % Kanal hataları hesaplanırken boyut kontrolü (Boyut uyumsuzluğunu çözen kısım)
+    if length(tx_bits) == length(rx_bits)
+        channel_errors = sum(tx_bits ~= rx_bits);
+    else
+        channel_errors = sum(tx_bits ~= decoded_bits) + (length(rx_bits) - length(tx_bits)); 
+        channel_errors = length(rx_bits) - sum(tx_bits == decoded_bits); 
+    end
+    
+    % Eğer kanal hatasını bulmanın en temiz yolunu istiyorsan, sadece genel özete odaklanalım:
+    fprintf('\n  [DIAGNOSTIC REPORT: %s]\n', upper(system_name));
+    fprintf('  -> Total Bits Transmitted: %d\n', length(tx_bits));
+    fprintf('  -> Residual (Uncorrected) Errors after Decoding: %d\n', total_errors);
     
     if total_errors > 0
-        % Hataların nerede yoğunlaştığını bulma (Burst error analizi)
         error_indices = find(tx_bits ~= decoded_bits);
         if length(error_indices) > 1
             avg_distance = mean(diff(error_indices));
-            fprintf('Diagnostic Insight: Errors are spaced by an average of %.1f bits.\n', avg_distance);
+            fprintf('  -> Diagnostic Insight: Errors are spaced by an average of %.1f bits.\n', avg_distance);
             if avg_distance < 4
-                fprintf('Analysis: System suffered from a dense error cluster (Burst-like behavior).\n');
+                fprintf('  -> Analysis: Dense error cluster detected (Burst error penalty).\n');
             end
         end
     else
-        fprintf('Diagnostic Insight: Code achieved 100%% error correction for this block.\n');
+        fprintf('  -> Diagnostic Insight: Code achieved 100%% perfect correction for this block.\n');
     end
-    fprintf('======================================================\n');
+    fprintf('------------------------------------------------------\n');
 end
